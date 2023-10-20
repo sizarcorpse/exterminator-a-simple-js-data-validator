@@ -61,6 +61,7 @@ class StringValidator {
     this.errors = [];
     this.preprocessors = [];
     this.isOptional = false;
+    this.isNullable = false;
   }
 
   /**
@@ -338,6 +339,17 @@ class StringValidator {
   }
 
   /**
+   * Nullable validator
+   *
+   * @param {Object} [options]
+   */
+
+  nullable() {
+    this.isNullable = true;
+    return this;
+  }
+
+  /**
    * Equals validator
    *
    * @param {string} field - Field to compare to
@@ -374,6 +386,17 @@ class StringValidator {
     // if the value is empty.
     if (this.isOptional && value === "") {
       return true;
+    }
+
+    // If this field is nullable, then we can skip all the other validation
+    // if the value is null.
+    if (value === null) {
+      if (this.isNullable) {
+        return true;
+      } else {
+        this.errors.push("Value cannot be null");
+        return false;
+      }
     }
 
     // Run the value through all the preprocessor functions, in order.
@@ -425,6 +448,7 @@ const person = {
   password: "SizarCorpse123@",
   confirmPassword: "SizarCorpse123@",
   gender: "Male",
+  balance: undefined,
 };
 const schema = {
   name: string().required().min(3).max(30),
@@ -443,8 +467,14 @@ const schema = {
   password: string().password(),
   confirmPassword: string().password().equals("password"),
   gender: string().oneOf(["Male", "Female", "Other"]),
+  balance: string().optional().nullable(),
 };
 
 const validator = new Exterminator(schema);
 const result = validator.validate(person);
 console.log(result);
+
+/* 
+
+
+*/
