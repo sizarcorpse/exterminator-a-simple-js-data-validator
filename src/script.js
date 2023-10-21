@@ -430,9 +430,176 @@ class StringValidator {
     return this.errors;
   }
 }
+class NumberValidator {
+  constructor(options) {
+    this.options = options;
+    this.preprocessors = [];
+    this.isOptional = false;
+    this.isNullable = false;
+    this.validators = [];
+  }
+
+  required({ message = "This field is required." } = {}) {
+    this.validators.push({
+      validate: (value) => value !== null && value !== undefined,
+      error: message,
+    });
+    return this;
+  }
+
+  min(
+    minValue,
+    {
+      message = `The number must be greater than or equal to ${minValue}.`,
+    } = {}
+  ) {
+    this.validators.push({
+      validate: (value) => value >= minValue,
+      error: message,
+    });
+    return this;
+  }
+
+  max(
+    maxValue,
+    { message = `The number must be less than or equal to ${maxValue}.` } = {}
+  ) {
+    this.validators.push({
+      validate: (value) => value <= maxValue,
+      error: message,
+    });
+    return this;
+  }
+
+  integer({ message = "The number must be an integer." } = {}) {
+    this.validators.push({
+      validate: (value) => Number.isInteger(value),
+      error: message,
+    });
+    return this;
+  }
+
+  positive({ message = "The number must be positive." } = {}) {
+    this.validators.push({
+      validate: (value) => value > 0,
+      error: message,
+    });
+    return this;
+  }
+
+  negative({ message = "The number must be negative." } = {}) {
+    this.validators.push({
+      validate: (value) => value < 0,
+      error: message,
+    });
+    return this;
+  }
+
+  greater(
+    field,
+    { message = `The number must be greater than ${field}.` } = {}
+  ) {
+    this.validators.push({
+      validate: (value, obj) => value > obj[field],
+      error: message,
+    });
+    return this;
+  }
+
+  less(field, { message = `The number must be less than ${field}.` } = {}) {
+    this.validators.push({
+      validate: (value, obj) => value < obj[field],
+      error: message,
+    });
+    return this;
+  }
+
+  greaterEqual(
+    field,
+    { message = `The number must be greater than or equal to ${field}.` } = {}
+  ) {
+    this.validators.push({
+      validate: (value, obj) => value >= obj[field],
+      error: message,
+    });
+    return this;
+  }
+
+  lessEqual(
+    field,
+    { message = `The number must be less than or equal to ${field}.` } = {}
+  ) {
+    this.validators.push({
+      validate: (value, obj) => value <= obj[field],
+      error: message,
+    });
+    return this;
+  }
+
+  optional() {
+    this.isOptional = true;
+    return this;
+  }
+
+  nullable() {
+    this.isNullable = true;
+    return this;
+  }
+
+  validate(value, obj) {
+    this.errors = [];
+
+    if (this.invalidSetup) {
+      this.errors.push(this.invalidSetup);
+      return false;
+    }
+
+    if (this.isOptional && value === "") {
+      return true;
+    }
+
+    if (value === null) {
+      if (this.isNullable) {
+        return true;
+      } else {
+        this.errors.push("Value cannot be null");
+        return false;
+      }
+    }
+
+    if (this.preprocessors) {
+      for (let preprocessor of this.preprocessors) {
+        value = preprocessor(value);
+      }
+    }
+
+    if (this.validators) {
+      for (let validator of this.validators) {
+        const result = validator.validate(value, obj);
+        if (result !== true) {
+          this.errors.push(
+            typeof validator.error === "function"
+              ? validator.error(value, result)
+              : validator.error
+          );
+        }
+      }
+    }
+
+    return this.errors.length === 0;
+  }
+
+  getErrors() {
+    return this.errors;
+  }
+}
 
 function string(options) {
   return new StringValidator(options);
+}
+
+function number(options) {
+  return new NumberValidator(options);
 }
 
 // USAGE EXAMPLE :
@@ -440,34 +607,18 @@ function string(options) {
 console.log("---------------------------------------------------");
 
 const person = {
-  name: "Sizar Corpse",
-  username: "sizarcorpse",
-  email: "sizarcorpse@exterminator.com",
-  officeMail: "sizaroffice@outlook.com",
-  phone: "(555) 555-5555",
-  password: "SizarCorpse123@",
-  confirmPassword: "SizarCorpse123@",
-  gender: "Male",
-  balance: undefined,
+  balance: 100,
+  dew: 500,
 };
 const schema = {
-  name: string().required().min(3).max(30),
-  username: string()
+  balance: number()
     .required()
-    .alphaNumeric()
-    .min(3)
-    .max(30)
-    .lowercase()
-    .trim(),
-  email: string()
-    .required()
-    .email({ domains: ["exterminator.com", "gmail.com", "outlook.com"] }),
-  officeMail: string().email({ excludeDomains: ["gmail.com"] }),
-  phone: string().phone("us"),
-  password: string().password(),
-  confirmPassword: string().password().equals("password"),
-  gender: string().oneOf(["Male", "Female", "Other"]),
-  balance: string().optional().nullable(),
+    .greater("dew", {
+      message: (cv) => {
+        return `Balance must be greater than dew ${cv}`;
+      },
+    }),
+  dew: number().required(),
 };
 
 const validator = new Exterminator(schema);
