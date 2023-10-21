@@ -463,6 +463,77 @@ class NumberValidator {
   }
 }
 
+class BooleanValidator {
+  constructor(options) {
+    this.options = options;
+    this.validators = [];
+    this.errors = [];
+    this.isOptional = false;
+    this.isNullable = false;
+
+    this.validators.push({
+      validate: (value) => typeof value === "boolean",
+      error: "The value must be a boolean.",
+    });
+  }
+
+  required({ message = "Value is required" } = {}) {
+    this.validators.push({
+      validate: (value) => value != null && value.trim() !== "",
+      error: message,
+    });
+    return this;
+  }
+
+  optional() {
+    this.isOptional = true;
+    return this;
+  }
+
+  nullable() {
+    this.isNullable = true;
+    return this;
+  }
+
+  validate(value, obj) {
+    this.errors = [];
+
+    if (this.invalidSetup) {
+      this.errors.push(this.invalidSetup);
+      return false;
+    }
+
+    if (this.isOptional && value === "") {
+      return true;
+    }
+
+    if (value === null) {
+      if (this.isNullable) {
+        return true;
+      } else {
+        this.errors.push("Value cannot be null");
+        return false;
+      }
+    }
+
+    for (let validator of this.validators) {
+      const result = validator.validate(value, obj);
+      if (result !== true) {
+        this.errors.push(
+          typeof validator.error === "function"
+            ? validator.error(value, result)
+            : validator.error
+        );
+      }
+    }
+
+    return this.errors.length === 0;
+  }
+  getErrors() {
+    return this.errors;
+  }
+}
+
 function string(options) {
   return new StringValidator(options);
 }
@@ -471,21 +542,24 @@ function number(options) {
   return new NumberValidator(options);
 }
 
+function boolean(options) {
+  return new BooleanValidator(options);
+}
+
 // USAGE EXAMPLE :
 
 console.log("-----------------------------------------------------");
 
 const person = {
-  name: 0,
+  name: false,
 };
 const schema = {
-  name: string(),
+  name: boolean().optional(),
 };
 
 const validator = new Exterminator(schema);
 const result = validator.validate(person);
 console.log(result);
 
-/* 
-
-*/
+/*
+ */
