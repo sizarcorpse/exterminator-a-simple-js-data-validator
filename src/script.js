@@ -534,6 +534,108 @@ class BooleanValidator {
   }
 }
 
+class ArrayValidator {
+  constructor(options) {
+    this.options = options;
+    this.validators = [];
+    this.errors = [];
+    this.isOptional = false;
+    this.isNullable = false;
+
+    this.validators.push({
+      validate: (value) => Array.isArray(value),
+      error: "The value must be an array.",
+    });
+  }
+
+  required({ message = "Value is required" } = {}) {
+    this.validators.push({
+      validate: (value) => value != null && value.trim() !== "",
+      error: message,
+    });
+    return this;
+  }
+
+  optional() {
+    this.isOptional = true;
+    return this;
+  }
+
+  nullable() {
+    this.isNullable = true;
+    return this;
+  }
+
+  length(
+    len,
+    { message = "The array length must be exactly " + len + "." } = {}
+  ) {
+    this.validators.push({
+      validate: (arr) => arr.length === len,
+      error: message,
+    });
+    return this;
+  }
+
+  min(
+    len,
+    { message = "The array length must be at least " + len + "." } = {}
+  ) {
+    this.validators.push({
+      validate: (arr) => arr.length >= len,
+      error: message,
+    });
+    return this;
+  }
+
+  max(len, { message = "The array length must be at most " + len + "." } = {}) {
+    this.validators.push({
+      validate: (arr) => arr.length <= len,
+      error: message,
+    });
+    return this;
+  }
+
+  validate(value, obj) {
+    this.errors = [];
+
+    if (this.invalidSetup) {
+      this.errors.push(this.invalidSetup);
+      return false;
+    }
+
+    if (this.isOptional && value === "") {
+      return true;
+    }
+
+    if (value === null) {
+      if (this.isNullable) {
+        return true;
+      } else {
+        this.errors.push("Value cannot be null");
+        return false;
+      }
+    }
+
+    for (let validator of this.validators) {
+      const result = validator.validate(value, obj);
+      if (result !== true) {
+        this.errors.push(
+          typeof validator.error === "function"
+            ? validator.error(value, result)
+            : validator.error
+        );
+      }
+    }
+
+    return this.errors.length === 0;
+  }
+
+  getErrors() {
+    return this.errors;
+  }
+}
+
 function string(options) {
   return new StringValidator(options);
 }
@@ -546,15 +648,19 @@ function boolean(options) {
   return new BooleanValidator(options);
 }
 
+function array(options) {
+  return new ArrayValidator(options);
+}
+
 // USAGE EXAMPLE :
 
 console.log("-----------------------------------------------------");
 
 const person = {
-  name: false,
+  names: null,
 };
 const schema = {
-  name: boolean().optional(),
+  names: array().optional().nullable(),
 };
 
 const validator = new Exterminator(schema);
@@ -562,4 +668,5 @@ const result = validator.validate(person);
 console.log(result);
 
 /*
- */
+
+*/
