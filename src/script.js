@@ -64,14 +64,6 @@ class StringValidator {
     this.isNullable = false;
   }
 
-  /**
-   * Required validator
-   *
-   * @param {Object} [options]
-   * @param {string} [options.message="Value is required"]
-   */
-
-  // Add a validator to ensure that the value is not null and not empty
   required({ message = "Value is required" } = {}) {
     this.validators.push({
       validate: (value) => value != null && value.trim() !== "",
@@ -80,13 +72,6 @@ class StringValidator {
     return this;
   }
 
-  /**
-   * Alphanumeric validator
-   *
-   * @param {Object} [options]
-   * @param {string} [options.message="Value must be alphanumeric"]
-   */
-
   alphaNumeric({ message = "Value must be alphanumeric" } = {}) {
     this.validators.push({
       validate: (value) => /^[a-zA-Z0-9]+$/i.test(value),
@@ -94,14 +79,6 @@ class StringValidator {
     });
     return this;
   }
-
-  /**
-   * Min length validator
-   *
-   * @param {Object} [options]
-   * @param {number} [options.length]
-   * @param {string} [options.message="Value must be at least ${length} characters long, but got ${value}"]
-   */
 
   min(
     length,
@@ -117,14 +94,6 @@ class StringValidator {
     return this;
   }
 
-  /**
-   * Max length validator
-   *
-   * @param {Object} [options]
-   * @param {number} [options.length]
-   * @param {string} [options.message="Value must be at most ${length} characters long, but got ${value}"]
-   */
-
   max(
     length,
     {
@@ -139,13 +108,6 @@ class StringValidator {
     return this;
   }
 
-  /**
-   * Lowercase validator
-   *
-   * @param {Object} [options]
-   * @param {string} [options.message="Value must be lowercase"]
-   */
-
   lowercase({ message = "Value must be lowercase" } = {}) {
     this.validators.push({
       validate: (value) => value === value.toLowerCase(),
@@ -154,12 +116,6 @@ class StringValidator {
     return this;
   }
 
-  /**
-   * Uppercase validator
-   *
-   * @param {Object} [options]
-   * @param {string} [options.message="Value must be uppercase"]
-   */
   uppercase({ message = "Value must be uppercase" } = {}) {
     this.validators.push({
       validate: (value) => value === value.toUpperCase(),
@@ -168,22 +124,11 @@ class StringValidator {
     return this;
   }
 
-  /**
-   * Email validator
-   *
-   * @param {Object} [options]
-   * @param {string} [options.message="Value must be a valid email"]
-   * @param {string[]} [options.domains=[]] - Allowed domains
-   * @param {string[]} [options.excludeDomains=[]] - Excluded domains
-   * @param {string} [options.message="Value must be a valid email"]
-   */
-
   email({
     message = "Value must be a valid email",
     domains = [],
     excludeDomains = [],
   } = {}) {
-    // If both domains and excludeDomains are provided, the validator is invalid.
     const commonDomains = domains.filter((domain) =>
       excludeDomains.includes(domain)
     );
@@ -196,24 +141,20 @@ class StringValidator {
 
     this.validators.push({
       validate: (value) => {
-        // Validate that the value matches the email regex.
         const regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/i;
         if (!regex.test(value)) {
           return typeof message === "function" ? message(value) : message;
         }
 
-        // Validate that the domain is allowed.
         const domain = value.split("@")[1];
         if (domains.length > 0 && !domains.includes(domain)) {
           return `Email domain must be one of ${domains.join(", ")}`;
         }
 
-        // Validate that the domain is not excluded.
         if (excludeDomains.length > 0 && excludeDomains.includes(domain)) {
           return `Email domain must not be one of ${excludeDomains.join(", ")}`;
         }
 
-        // If the value is valid, return true.
         return true;
       },
       error: (value, result) =>
@@ -225,15 +166,6 @@ class StringValidator {
     });
     return this;
   }
-
-  /**
-   * Phone validator
-   *
-   * @param {string} region - Region of the phone number
-   * @param {Object} [options]
-   * @param {string} [options.pattern] - Custom pattern to match
-   * @param {string} [options.message="Value must be a valid phone number"]
-   */
 
   phone(
     region = "us",
@@ -256,14 +188,6 @@ class StringValidator {
     return this;
   }
 
-  /**
-   * Password validator
-   *
-   * @param {Object} [options]
-   * @param {string} [options.pattern] - Custom pattern to match
-   * @param {string} [options.message="Password does not meet the requirements"]
-   */
-
   password(
     pattern,
     { message = "Password does not meet the requirements" } = {}
@@ -279,14 +203,6 @@ class StringValidator {
     return this;
   }
 
-  /**
-   * Regex validator
-   *
-   * @param {Object} [options]
-   * @param {string} [options.pattern] - Custom pattern to match
-   * @param {string} [options.message="Value does not match the pattern"]
-   */
-
   regex(pattern, { message = "Value does not match the pattern" } = {}) {
     this.validators.push({
       validate: (value) => pattern.test(value),
@@ -294,14 +210,6 @@ class StringValidator {
     });
     return this;
   }
-
-  /**
-   * One of validator
-   *
-   * @param {Object} [options]
-   * @param {string[]} [options.allowedValues=[]] - Allowed values
-   * @param {string} [options.message="Invalid value"]
-   */
 
   oneOf(allowedValues = [], { message = "Invalid value" } = {}) {
     if (allowedValues.length === 0) {
@@ -315,47 +223,20 @@ class StringValidator {
     return this;
   }
 
-  /**
-   * Trim validator
-   *
-   * @param {Object} [options]
-   * @param {string} [options.message="Value must be trimmed"]
-   */
-
   trim() {
     this.preprocessors.push((value) => value.trim());
     return this;
   }
-
-  /**
-   * Optional validator
-   *
-   * @param {Object} [options]
-   */
 
   optional() {
     this.isOptional = true;
     return this;
   }
 
-  /**
-   * Nullable validator
-   *
-   * @param {Object} [options]
-   */
-
   nullable() {
     this.isNullable = true;
     return this;
   }
-
-  /**
-   * Equals validator
-   *
-   * @param {string} field - Field to compare to
-   * @param {Object} [options]
-   * @param {string} [options.message="Value must be equal to ${field}"]
-   */
 
   equals(field, { message = `Value must be equal to ${field}` } = {}) {
     this.validators.push({
@@ -365,31 +246,18 @@ class StringValidator {
     return this;
   }
 
-  /**
-   * Validate the value
-   *
-   * @param {string} value - Value to validate
-   * @param {Object} obj - Object to validate against
-   */
-
   validate(value, obj) {
-    // Clear out all errors before running validation
     this.errors = [];
 
-    // If this field's setup is invalid, then we can't validate it.
     if (this.invalidSetup) {
       this.errors.push(this.invalidSetup);
       return false;
     }
 
-    // If this field is optional, then we can skip all the other validation
-    // if the value is empty.
     if (this.isOptional && value === "") {
       return true;
     }
 
-    // If this field is nullable, then we can skip all the other validation
-    // if the value is null.
     if (value === null) {
       if (this.isNullable) {
         return true;
@@ -399,12 +267,10 @@ class StringValidator {
       }
     }
 
-    // Run the value through all the preprocessor functions, in order.
     for (let preprocessor of this.preprocessors) {
       value = preprocessor(value);
     }
 
-    // Run the value through all the validator functions, in order.
     for (let validator of this.validators) {
       const result = validator.validate(value, obj);
       if (result !== true) {
@@ -416,16 +282,8 @@ class StringValidator {
       }
     }
 
-    // If there are any errors, the value is invalid. Otherwise, it's valid.
     return this.errors.length === 0;
   }
-
-  /**
-   * Get the errors
-   *
-   * @returns {string[]} - Array of errors
-   */
-
   getErrors() {
     return this.errors;
   }
@@ -607,19 +465,9 @@ function number(options) {
 console.log("---------------------------------------------------");
 
 const person = {
-  balance: 100,
-  dew: 500,
+  name: "John Doe",
 };
-const schema = {
-  balance: number()
-    .required()
-    .greater("dew", {
-      message: (cv) => {
-        return `Balance must be greater than dew ${cv}`;
-      },
-    }),
-  dew: number().required(),
-};
+const schema = {};
 
 const validator = new Exterminator(schema);
 const result = validator.validate(person);
