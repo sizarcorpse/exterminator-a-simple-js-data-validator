@@ -8,7 +8,6 @@ class Exterminator {
     const schemaKeys = Object.keys(this.schema);
     const objKeys = Object.keys(obj);
 
-    // Make sure the keys in the schema and the obj are the same.
     if (!this.arraysEqual(schemaKeys.sort(), objKeys.sort())) {
       return {
         message: "Validation failed",
@@ -19,27 +18,20 @@ class Exterminator {
     }
 
     const errors = {};
-    // Loop through all the keys in the schema.
     for (let key in this.schema) {
-      // Make sure the key is a property of the schema, not the prototype.
       if (this.schema.hasOwnProperty(key)) {
-        // Get the validator for the key.
         const validator = this.schema[key];
-        // Get the value from the object.
         let value = obj[key];
-        // Validate the value.
         let error = validator.validate(value, obj);
-        // If the value is invalid, store the error.
         if (error !== true) {
           errors[key] = validator.getErrors();
           this.errors.push({ [key]: error });
         }
       }
     }
-    // If there are no errors, return true.
+
     if (Object.keys(errors).length === 0) {
       return true;
-      // Otherwise, return the errors.
     } else {
       return {
         message: "Validation failed",
@@ -48,9 +40,13 @@ class Exterminator {
     }
   }
 
-  // Check if two arrays are equal.
   arraysEqual(a, b) {
-    return a.length === b.length && a.every((val, index) => val === b[index]);
+    return (
+      Array.isArray(a) &&
+      Array.isArray(b) &&
+      a.length === b.length &&
+      a.every((val, index) => val === b[index])
+    );
   }
 }
 
@@ -62,6 +58,11 @@ class StringValidator {
     this.preprocessors = [];
     this.isOptional = false;
     this.isNullable = false;
+
+    this.validators.push({
+      validate: (value) => typeof value === "string",
+      error: "The value must be a string.",
+    });
   }
 
   required({ message = "Value is required" } = {}) {
@@ -132,6 +133,7 @@ class StringValidator {
     const commonDomains = domains.filter((domain) =>
       excludeDomains.includes(domain)
     );
+
     if (commonDomains.length > 0) {
       this.invalidSetup = `Domains ${commonDomains.join(
         ", "
@@ -142,6 +144,7 @@ class StringValidator {
     this.validators.push({
       validate: (value) => {
         const regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/i;
+
         if (!regex.test(value)) {
           return typeof message === "function" ? message(value) : message;
         }
@@ -181,6 +184,7 @@ class StringValidator {
       default:
         throw new Error(`Unsupported region: ${region}`);
     }
+
     this.validators.push({
       validate: (value) => pattern.test(value),
       error: message,
@@ -288,6 +292,7 @@ class StringValidator {
     return this.errors;
   }
 }
+
 class NumberValidator {
   constructor(options) {
     this.options = options;
@@ -295,11 +300,17 @@ class NumberValidator {
     this.isOptional = false;
     this.isNullable = false;
     this.validators = [];
+
+    this.validators.push({
+      validate: (value) => typeof value === "number",
+      error: "The value must be a number.",
+    });
   }
 
   required({ message = "This field is required." } = {}) {
     this.validators.push({
-      validate: (value) => value !== null && value !== undefined,
+      validate: (value) =>
+        value !== null && value !== undefined && value !== "",
       error: message,
     });
     return this;
@@ -462,18 +473,19 @@ function number(options) {
 
 // USAGE EXAMPLE :
 
-console.log("---------------------------------------------------");
+console.log("-----------------------------------------------------");
 
 const person = {
-  name: "John Doe",
+  name: 0,
 };
-const schema = {};
+const schema = {
+  name: string(),
+};
 
 const validator = new Exterminator(schema);
 const result = validator.validate(person);
 console.log(result);
 
 /* 
-
 
 */
